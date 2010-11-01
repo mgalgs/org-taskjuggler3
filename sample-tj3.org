@@ -1,0 +1,163 @@
+#+TODO: TODO(t) ACTIVE(a) HOLD(h) | DONE(d)
+#+TAGS: taskjuggler_project taskjuggler_task taskjuggler_resource taskjuggler_globals
+#+DRAWERS: PROPERTIES TJ
+#+EXPORT_EXCLUDE_TAGS: taskjuggler_project taskjuggler_resource taskjuggler_globals
+
+#+TITLE: Accounting Software Project Plan
+
+* Accounting Software Project 												   :taskjuggler_project:
+:PROPERTIES:
+:COLUMNS: %40ITEM(Project) %10start %10finish %4duration %1TAGS
+:start: 2010-04-21
+:finish: 2010-12-31
+:END:
+:TJ:
+now 2010-05-20
+
+scenario plan "Plan" {
+	scenario actual "Actual"
+}
+:END:
+
+* Accounting Software Tasks														  :taskjuggler_task:
+:PROPERTIES:
+:COLUMNS: %40ITEM(Task) %12task_id(ID) %15allocate(Allocate) %10start %6duration %3complete(%%) %30BLOCKER %2ORDERED(^v) %10flags(Flags) %1TAGS
+:start: 2010-04-21
+:END:
+*** Specification
+	:PROPERTIES:
+	:duration:   20d
+	:allocate: dev
+	:task_id:  spec
+	:END:
+*** Software development
+	:PROPERTIES:
+	:allocate: dev
+	:task_id:  dev
+	:BLOCKER:  spec
+	:ORDERED:  t
+	:END:
+***** ACTIVE Database coupling
+	  :PROPERTIES:
+	  :duration:   20d
+	  :END:
+***** Back-end functions
+	  :PROPERTIES:
+	  :duration:   30d
+	  :END:
+***** Graphical UI
+	  :PROPERTIES:
+	  :duration:   35d
+	  :allocate: paul, seb
+	  :END:
+*** Software testing
+	:PROPERTIES:
+	:allocate: peter
+	:task_id:  test
+	:BLOCKER:  dev
+	:ORDERED:  t
+	:END:
+***** Alpha test
+	  :PROPERTIES:
+	  :duration: 5d
+	  :END:
+***** Beta test
+	  :PROPERTIES:
+	  :duration: 20d
+	  :END:
+*** ACTIVE Manual 
+	:PROPERTIES:
+	:duration: 50d
+	:allocate: dim
+	:BLOCKER:  spec
+	:END: 
+*** Milestones
+***** Project start
+***** Technology preview
+***** Beta version
+***** Ship product to customer
+* Project Resources															  :taskjuggler_resource:
+:PROPERTIES:
+:COLUMNS: %40ITEM(Resource) %12resource_id(ID) %1TAGS
+:END:
+*** Developers
+	:PROPERTIES:
+	:resource_id: dev
+	:END:
+***** Paul
+***** Sebastien
+	  :PROPERTIES:
+	  :resource_id: seb
+	  :END:
+***** Klaus
+*** Others
+***** Peter
+***** Dim
+* Reports and global properties												   :taskjuggler_globals:
+:TJ:
+navigator navbar {
+  hidereport 0
+}
+
+textreport frame "" {
+  header -8<-
+    == Project Plan ==
+    ----
+    <[navigator id="navbar"]>
+    ----
+  ->8-
+  footer "----"
+
+  textreport r1 "Overview" {
+    formats html
+	center '<[report id="rollup1"]>'
+  }
+
+  textreport r2 "Gantt rollup 2" {
+    formats html
+	center '<[report id="rollup2"]>'
+  }
+  
+  textreport at "Gantt active tasks" {
+    formats html
+	center '<[report id="activetasks"]>'
+  }
+
+  textreport index "Full Gantt" {
+    formats html
+	center '<[report id="overview"]>'
+  }
+
+}
+
+taskreport rollup1 "Gannt Rollup 1" {
+  columns hierarchindex, name, start, end, effort, duration, completed, chart
+  timeformat "%Y-%m-%d"
+  hideresource 1
+  rolluptask (treelevel() > 1)
+  loadunit shortauto
+}
+
+taskreport rollup2 "Gannt Rollup 2" {
+  columns hierarchindex, name, start, end, effort, duration, completed, chart
+  timeformat "%Y-%m-%d"
+  hideresource 1
+  rolluptask (treelevel() > 2)
+  loadunit shortauto
+}
+
+taskreport activetasks "Active Tasks" {
+  columns hierarchindex, name, start, end, effort, duration, completed, chart
+  timeformat "%Y-%m-%d"
+  hidetask ~ACTIVE
+  loadunit shortauto
+}
+
+taskreport overview "" {
+  columns hierarchindex, name, start, end, effort, duration, completed, chart
+  timeformat "%Y-%m-%d"
+  hideresource 1
+  loadunit shortauto
+}
+:END:
+
