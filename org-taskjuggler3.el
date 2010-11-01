@@ -1,4 +1,4 @@
-;;; org-taskjuggler2.el --- Improved TaskJuggler exporter for org-mode
+;;; org-taskjuggler3.el --- TaskJuggler III exporter for org-mode
 ;;
 ;; Copyright (C) 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
 ;;
@@ -212,29 +212,13 @@ with `org-export-taskjuggler-project-tag'"
   :type 'integer)
 
 (defcustom org-export-taskjuggler-default-reports 
-  '("taskreport \"Gantt Chart\" {
-  headline \"Project Gantt Chart\"
-  columns hierarchindex, name, start, end, effort, duration, completed, chart
-  timeformat \"%Y-%m-%d\"
-  hideresource 1
-  loadunit shortauto
-}"
-	"resourcereport \"Resource Graph\" {
-  headline \"Resource Allocation Graph\"
-  columns no, name, utilization, freeload, chart
-  loadunit shortauto
-  sorttasks startup
-  hidetask ~isleaf()
-}")
+  '("")
   "Default reports for the project."
   :group 'org-export-taskjuggler
   :type '(repeat (string :tag "Report")))
 
 (defcustom org-export-taskjuggler-default-global-properties 
-  "shift s40 \"Part time shift\" {
-  workinghours wed, thu, fri off
-}
-"
+  ""
   "Default global properties for the project. Here you typically
 define global properties such as shifts, accounts, rates,
 vacation, macros and flags. Any property that is allowed within
@@ -285,11 +269,12 @@ default reports as defined in
 		   '(org-taskjuggler-components) 
 		   org-export-taskjuggler-globals-tag nil 'archive 'comment))
 		 (tasks
-		  (org-taskjuggler-resolve-dependencies
-		   (org-taskjuggler-assign-task-ids 
-			(org-map-entries 
-			 '(org-taskjuggler-components) 
-			 org-export-taskjuggler-task-tag nil 'archive 'comment))))
+		  (org-taskjuggler-compute-task-leafiness
+		   (org-taskjuggler-resolve-dependencies
+			(org-taskjuggler-assign-task-ids 
+			 (org-map-entries 
+			  '(org-taskjuggler-components) 
+			  org-export-taskjuggler-task-tag nil 'archive 'comment)))))
 		 (resources
 		  (org-taskjuggler-assign-resource-ids
 		   (org-map-entries 
@@ -302,7 +287,7 @@ default reports as defined in
 					 org-export-taskjuggler-extension)))
 		 (buffer (find-file-noselect filename))
 		 (org-export-taskjuggler-old-level 0)
-		 (default-flags (org-taskjuggler-default-flags-list)) 
+		 (default-flags (org-taskjuggler-default-flags))
 		 task resource)
 	(unless projects
 	  (error "No project specified"))
@@ -319,7 +304,7 @@ default reports as defined in
       (insert org-export-taskjuggler-default-global-properties)
       (insert "\n")
 	  (when default-flags
-		  (insert "flags " (mapconcat 'identity default-flags ", ") "\n"))
+		(insert "flags " (mapconcat 'identity default-flags ", ") "\n"))
 	  (when (assoc "source-code" (car globals))
 		(insert (cdr (assoc "source-code" (car globals))) "\n"))
 	  
@@ -344,15 +329,26 @@ default reports as defined in
 		  (message "Exporting... done"))
       (current-buffer))))
 
+;;;###autoload
+(defun org-export-as-taskjuggler-and-open ()
+  "Export the current buffer as a TaskJuggler file and process it with tj3."
+  (interactive)
+  (let* ((file-name (buffer-file-name (org-export-as-taskjuggler)))
+		 (process-name "tj3")
+		 (command (concat process-name " " file-name))
+		 buffer)
+	(setf buffer (compilation-start command t))))
+
+
 (defun org-taskjuggler-default-flags ()
   "Answer a list of all the tags and TODO stated declared for use
 in the buffer, except those which are special for taskjuggler
 export."
   (let (flags
 		(special-tags `(,org-export-taskjuggler-project-tag
-		,org-export-taskjuggler-task-tag
-		,org-export-taskjuggler-resource-tag
-		,org-export-taskjuggler-globals-tag)))
+						,org-export-taskjuggler-task-tag
+						,org-export-taskjuggler-resource-tag
+						,org-export-taskjuggler-globals-tag)))
 	(dolist (pair org-tag-alist)
 	  (unless (member (car pair) special-tags)
 		(add-to-list 'flags (car pair))))
@@ -392,16 +388,25 @@ none were given."
 		  (time-string (format-time-string "%Y-%m-%d")))
 	  (setcar tasks (push (cons "start" time-string) task)))))
 
+(defun org-taskjuggler-compute-task-leafiness (tasks)
+  "Figure out if each task is a leaf by looking at it's level,
+and the level of its successor. If the successor is higher (ie
+deeper), then it's not a leaf."
+  (let ((levels (mapcar '(lambda (task) (cdr (assoc "level" task))) tasks))
+		new-tasks)
+	(when (null levels)
+	  (setf new-tasks (push (push (cons "leaf-node" t) task) new-tasks))
+	  (return-from org-taskjuggler-compute-task-leafiness))
 
-;;;###autoload
-(defun org-export-as-taskjuggler-and-open ()
-  "Export the current buffer as a TaskJuggler file and open it
-with the TaskJuggler GUI."
-  (interactive)
-  (let* ((file-name (buffer-file-name (org-export-as-taskjuggler)))
-		 (process-name "TaskJugglerUI")
-		 (command (concat process-name " " file-name)))
-    (start-process-shell-command process-name nil command)))
+	(dolist (task tasks)
+	  (setf levels (cdr levels))
+	  (when (null levels)
+		(setf new-tasks (push (push (cons "leaf-node" t) task) new-tasks))
+		(return))
+	  (if (<= (car levels) (cdr (assoc "level" task)))
+		  (setf new-tasks (push (push (cons "leaf-node" t) task) new-tasks))
+		  (setf new-tasks (push task new-tasks))))
+	(nreverse new-tasks)))
 
 (defun org-taskjuggler-parent-is-ordered-p ()
   "Return true if the parent of the current node has a property
@@ -468,7 +473,7 @@ unique id to each resource."
 	   (push (cons "unique-id" unique-id) resource)
 	   (cons resource 
 			 (org-taskjuggler-assign-resource-ids (cdr resources) 
-												  (cons unique-id unique-ids)))))))
+										  (cons unique-id unique-ids)))))))
 
 (defun org-taskjuggler-resolve-dependencies (tasks)
   (let ((previous-level 0)
@@ -577,8 +582,8 @@ finally add more underscore characters (\"_\")."
 		 (parts (split-string headline))
 		 (id (org-taskjuggler-clean-id (downcase (pop parts)))))
 										; try to add more parts of the headline to make it unique
-    (while (member id unique-ids)
-      (setq id (concat id "_" (org-taskjuggler-clean-id (downcase (pop parts))))))
+	(while (and (member id unique-ids) (car parts))
+	  (setq id (concat id "_" (org-taskjuggler-clean-id (downcase (pop parts))))))
 										; if its still not unique add "_"
     (while (member id unique-ids)
       (setq id (concat id "_")))
@@ -600,10 +605,11 @@ with separator \"\n\"."
 contains taskJuggler source code at the heading near point."
   (save-excursion 
 	(when point (goto-char point))
-	(let* ((org-property-start-re (concat 
-								   "^[ \t]*:"
-								   org-export-taskjuggler-source-code-drawer 
-								   ":[ \t]*$"))
+	(let* ((org-property-start-re 
+			(concat 
+			 "^[ \t]*:"
+			 org-export-taskjuggler-source-code-drawer 
+			 ":[ \t]*$"))
 		   (bounds (org-get-property-block)))
 	  (if bounds
 		  (buffer-substring-no-properties (car bounds) (cdr bounds))
@@ -675,6 +681,7 @@ specified, the duration is calculated
 	 (cdr (assoc "source-code" project))
 	 "}\n\n")))
 
+
 (defun org-taskjuggler-open-task (task)
   (let* ((unique-id (cdr (assoc "unique-id" task)))
 		 (headline (cdr (assoc "headline" task)))
@@ -688,6 +695,11 @@ specified, the duration is calculated
 					   (cdr (assoc "complete" task))))
 		 (parent-ordered (cdr (assoc "parent-ordered" task)))
 		 (previous-sibling (cdr (assoc "previous-sibling" task)))
+		 (leaf-node (cdr (assoc "leaf-node" task)))
+		 (duration (cdr (assoc "duration" task)))
+		 (end (cdr (assoc "end" task)))
+		 (period (cdr (assoc "period" task)))
+		 (cannot-be-scheduled (not (or duration end period effort)))
 		 (attributes 
 		  '(account start note duration endbuffer endcredit end
 			flags journalentry length maxend maxstart milestone
@@ -699,15 +711,17 @@ specified, the duration is calculated
       (if (and parent-ordered previous-sibling)
 		  (format " depends %s\n" previous-sibling)
 		  (and depends (format " depends %s\n" depends)))
-      (and allocate (format " purge allocations\n allocate %s\n" allocate))
+      (and allocate (format " purge allocate\n allocate %s\n" allocate))
       (and complete (format " complete %s\n" complete))
       (and effort (format " effort %s\n" effort))
       (and priority (format " priority %s\n" priority))
       (and state (format " flags %s\n" state))
-
+	  (when (and leaf-node cannot-be-scheduled)
+		(format " duration 1d\n"))
       (org-taskjuggler-get-attributes task attributes)
       "\n"
 	  (cdr (assoc "source-code" task))))))
+
 
 (defun org-taskjuggler-open-resource (resource)
   "Insert the beginning of a resource declaration. All valid
@@ -744,6 +758,6 @@ is defined it will calculate a unique id for the resource using
       (insert report "\n"))))
 
 
-(provide 'org-taskjuggler2)
+(provide 'org-taskjuggler3)
 
 ;;; org-taskjuggler.el ends here
