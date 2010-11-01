@@ -1,0 +1,50 @@
+
+* Description
+
+  The TaskJuggler exporter that is included with org-mode exports to
+  TaskJuggler2. This is a slightly modified and improved version of that
+  exporter (written and maintained by Christian Egli), that exports TaskJuggler3
+  projects.
+
+  Christian is in the process of incorporating some of these changes into the
+  released version, and making it compatible with both TasjJuggler2 and
+  TaskJuggler3. In the meantime, this is the version that I am using.
+
+* Installation
+
+  This code is a drop-in replacement for the taskjuggler exporter in org-mode.
+  Just load it after you load org, like this:
+
+  =(require 'org)=
+  =(load-file "/path/to/org-tasjuggler3.el")=
+
+* Sample File
+
+  Load the file =sample-tj3.org=, and export it with C-c e J. This will export
+  the file to taskjuggler3, and generate some html files in the same directory
+  as the .org file as output. Open overview.html in a web browser to see the
+  project overview.
+
+* Changes from the TaskJuggler2 exporter
+  
+	- The project node was confused with the top task node. The project gets its
+	  own node. Needed because...
+	- The project now respects an end date or a duration specified on the project node
+	- The exporter now exports TODO states as flags so that you can use them to
+	  filter reports (eg generate a pending tasks or an in-progress tasks
+	  report)
+	- Added a globals node where you can put reports, and other global
+	  declarations.
+	- You can create a drawer called :TJ: on any exported node. Anything you put
+	  in there will be exported as TaskJuggler source code with that node. The
+	  idea is that if there is a feature that you want to use, but is not
+	  implemented in the exporter (for example, accounts), you can put still use
+	  org-mode to manage your project
+	- TaskJuggler3 won't compile your project if leaf nodes cannot be scheduled
+	  (ie no start date or dependency, and no duration, effort or end date). The
+	  exporter will export these tasks with a duration of 1 day in order to make
+	  TaskJuggler3 happy. You can, of course, change this by giving the compiler
+	  the information it needs to schedule the leaf node.
+
+  It is probably easiest to look at the sample file, which shows off all of
+  these features.
