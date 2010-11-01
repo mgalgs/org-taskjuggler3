@@ -15,10 +15,9 @@
   This code is a drop-in replacement for the taskjuggler exporter in org-mode.
   Just load it after you load org, like this:
 
-#+begin_src bash
   (require 'org)
+
   (load-file "/path/to/org-tasjuggler3.el")
-#+end_src
 
 * Sample File
 
