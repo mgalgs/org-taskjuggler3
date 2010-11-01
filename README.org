@@ -22,7 +22,7 @@
 
   Load the file =sample-tj3.org=, and export it with C-c e J. This will export
   the file to taskjuggler3, and generate some html files in the same directory
-  as the .org file as output. Open overview.html in a web browser to see the
+  as the .org file as output. Open Overview.html in a web browser to see the
   project overview.
 
 * Changes from the TaskJuggler2 exporter
