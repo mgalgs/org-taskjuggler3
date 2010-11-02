@@ -7,8 +7,9 @@
   projects.
 
   Christian is in the process of incorporating some of these changes into the
-  released version, and making it compatible with both TasjJuggler2 and
-  TaskJuggler3. In the meantime, this is the version that I am using.
+  released version of the exporter, and making it compatible with both
+  TasjJuggler2 and TaskJuggler3. In the meantime, I have a project that I'm
+  trying to schedule! this is the version that I am using for my project.
 
 * Installation
 
@@ -25,26 +26,37 @@
   as the .org file as output. Open Overview.html in a web browser to see the
   project overview.
 
+  Also, the sample file gives examples of all the changes (listed below) between
+  the TaskJuggler2 exporter and this exporter.
+
 * Changes from the TaskJuggler2 exporter
   
-	- The project node was confused with the top task node. The project gets its
-	  own node. Needed because...
-	- The project now respects an end date or a duration specified on the project node
-	- The exporter now exports TODO states as flags so that you can use them to
-	  filter reports (eg generate a pending tasks or an in-progress tasks
-	  report)
-	- Added a globals node where you can put reports, and other global
-	  declarations.
-	- You can create a drawer called :TJ: on any exported node. Anything you put
-	  in there will be exported as TaskJuggler source code with that node. The
-	  idea is that if there is a feature that you want to use, but is not
-	  implemented in the exporter (for example, accounts), you can put still use
-	  org-mode to manage your project
-	- TaskJuggler3 won't compile your project if leaf nodes cannot be scheduled
-	  (ie no start date or dependency, and no duration, effort or end date). The
-	  exporter will export these tasks with a duration of 1 day in order to make
-	  TaskJuggler3 happy. You can, of course, change this by giving the compiler
-	  the information it needs to schedule the leaf node.
-
-  It is probably easiest to look at the sample file, which shows off all of
-  these features.
+*** Project gets its own node
+	  - In the TJ2 exporter, the project node is confused with the top task
+	    node. Now the project gets its own node, and supports appropriate
+	    project-level properties, specifically...
+	  - The project now respects an end date or a duration specified on the
+	    project node.
+	  - Identify this node with the tag =taskjuggler_project= (can be changed by
+	    customizing =org-export-taskjuggler=).
+*** TODO states become flags
+	  - The exporter now exports TODO states as flags so that you can use them to
+	  	filter reports (eg generate a pending tasks or an in-progress tasks
+	  	report)
+*** Global node for reports and other globals
+	  - Added a globals node where you can put reports, and other global
+	  	declarations.
+	  - Identify this node with the tasg =taskjuggler_globals= (can be changed
+	    by customizing =org-export-taskjuggler=).
+*** Add TaskJuggler source code to any node
+	  - You can create a drawer called :TJ: on any exported node. Anything you put
+	  	in there will be exported as TaskJuggler source code with that node. The
+	  	idea is that if there is a feature that you want to use, but is not
+	  	implemented in the exporter (for example, accounts), you can put still use
+	  	org-mode to manage your project
+*** Bug fixes
+	  - TaskJuggler3 won't compile your project if leaf nodes cannot be scheduled
+	  	(ie no start date or dependency, and no duration, effort or end date). The
+	  	exporter will export these tasks with a duration of 1 day in order to make
+	  	TaskJuggler3 happy. You can, of course, change this by giving the compiler
+	  	the information it needs to schedule the leaf node.
