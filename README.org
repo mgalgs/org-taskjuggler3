@@ -32,31 +32,36 @@
 * Changes from the TaskJuggler2 exporter
   
 *** Project gets its own node
-	  - In the TJ2 exporter, the project node is confused with the top task
-	    node. Now the project gets its own node, and supports appropriate
-	    project-level properties, specifically...
-	  - The project now respects an end date or a duration specified on the
-	    project node.
-	  - Identify this node with the tag =taskjuggler_project= (can be changed by
-	    customizing =org-export-taskjuggler=).
+	- In the TJ2 exporter, the project node is confused with the top task
+	  node. Now the project gets its own node, and supports appropriate
+	  project-level properties, specifically...
+	- The project now respects an end date or a duration specified on the
+	  project node.
+	- Identify this node with the tag =taskjuggler_project= (can be changed by
+	  customizing =org-export-taskjuggler=).
 *** TODO states become flags
-	  - The exporter now exports TODO states as flags so that you can use them to
-	  	filter reports (eg generate a pending tasks or an in-progress tasks
-	  	report)
+	- The exporter now exports TODO states as flags so that you can use them to
+	  filter reports (eg generate a pending tasks or an in-progress tasks
+	  report)
 *** Global node for reports and other globals
-	  - Added a globals node where you can put reports, and other global
-	  	declarations.
-	  - Identify this node with the tasg =taskjuggler_globals= (can be changed
-	    by customizing =org-export-taskjuggler=).
+	- Added a globals node where you can put reports, and other global
+	  declarations.
+	- Identify this node with the tasg =taskjuggler_globals= (can be changed
+	  by customizing =org-export-taskjuggler=).
 *** Add TaskJuggler source code to any node
-	  - You can create a drawer called :TJ: on any exported node. Anything you put
-	  	in there will be exported as TaskJuggler source code with that node. The
-	  	idea is that if there is a feature that you want to use, but is not
-	  	implemented in the exporter (for example, accounts), you can put still use
-	  	org-mode to manage your project
+	- You can create a drawer called :TJ: on any exported node. Anything you put
+	  in there will be exported as TaskJuggler source code with that node. The
+	  idea is that if there is a feature that you want to use, but is not
+	  implemented in the exporter (for example, accounts), you can put still use
+	  org-mode to manage your project.
+*** New sample reports
+	- The sample reports from TaskJuggler2 don't work in TaskJuggler3 because
+	  the reporting framework has been extensively rewritten. This release
+	  replaces the default reports with ones that work in TaskJuggler3. You can
+	  change or delete them by customizing =org-export-taskjuggler=.
 *** Bug fixes
-	  - TaskJuggler3 won't compile your project if leaf nodes cannot be scheduled
-	  	(ie no start date or dependency, and no duration, effort or end date). The
-	  	exporter will export these tasks with a duration of 1 day in order to make
-	  	TaskJuggler3 happy. You can, of course, change this by giving the compiler
-	  	the information it needs to schedule the leaf node.
+	- TaskJuggler3 won't compile your project if leaf nodes cannot be scheduled
+	  (ie no start date or dependency, and no duration, effort or end date). The
+	  exporter will export these tasks with a duration of 1 day in order to make
+	  TaskJuggler3 happy. You can, of course, change this by giving the compiler
+	  the information it needs to schedule the leaf node.
