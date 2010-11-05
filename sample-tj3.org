@@ -99,65 +99,181 @@ navigator navbar {
   hidereport 0
 }
 
+macro TaskTip [
+  tooltip istask() -8<-
+    '''Start: ''' <-query attribute='start'->
+    '''End: ''' <-query attribute='end'->
+    ----
+    '''Resources:'''
+    
+    <-query attribute='resources'->
+    ----
+    '''Precursors: '''
+    
+    <-query attribute='precursors'->
+    ----
+    '''Followers: '''
+    
+    <-query attribute='followers'->
+    ->8-
+]
+
 textreport frame "" {
   header -8<-
-    == Project Plan ==
+    == Accounting Software Project ==
     ----
     <[navigator id="navbar"]>
     ----
   ->8-
   footer "----"
-
-  textreport r1 "Overview" {
+  textreport index "Overview" {
     formats html
-	center '<[report id="rollup1"]>'
+    center '<[report id="overview"]>'
   }
 
-  textreport r2 "Gantt rollup 2" {
+  textreport "Status" {
     formats html
-	center '<[report id="rollup2"]>'
-  }
-  
-  textreport at "Gantt active tasks" {
-    formats html
-	center '<[report id="activetasks"]>'
-  }
-
-  textreport index "Full Gantt" {
-    formats html
-	center '<[report id="overview"]>'
+    center -8<-
+      <[report id="status.dashboard"]>
+      ----
+      <[report id="status.completed"]>
+      ----
+      <[report id="status.ongoing"]>
+      ----
+      <[report id="status.future"]>
+    ->8-   
   }
 
+  textreport development "Development" {
+    formats html
+    center '<[report id="development"]>'
+  }
+
+  textreport "Deliveries" {
+    formats html
+    center '<[report id="deliveries"]>'
+  }
+
+  textreport "ContactList" {
+    formats html
+    title "Contact List"
+    center '<[report id="contactList"]>'
+  }
+  textreport "ResourceGraph" {
+    formats html
+    title "Resource Graph"
+    center '<[report id="resourceGraph"]>'
+  }
 }
 
-taskreport rollup1 "Gannt Rollup 1" {
-  columns hierarchindex, name, start, end, effort, duration, completed, chart
-  timeformat "%Y-%m-%d"
-  hideresource 1
-  rolluptask (treelevel() > 1)
-  loadunit shortauto
-}
-
-taskreport rollup2 "Gannt Rollup 2" {
-  columns hierarchindex, name, start, end, effort, duration, completed, chart
-  timeformat "%Y-%m-%d"
-  hideresource 1
-  rolluptask (treelevel() > 2)
-  loadunit shortauto
-}
-
-taskreport activetasks "Active Tasks" {
-  columns hierarchindex, name, start, end, effort, duration, completed, chart
-  timeformat "%Y-%m-%d"
-  hidetask ~ACTIVE
-  loadunit shortauto
-}
-
+# A traditional Gantt chart with a project overview.
 taskreport overview "" {
-  columns hierarchindex, name, start, end, effort, duration, completed, chart
-  timeformat "%Y-%m-%d"
+  header -8<-
+    === Project Overview ===
+    
+    The project is structured into 3 phases.
+    
+    # Specification
+    # <-reportlink id='frame.development'->
+    # Testing
+    
+    === Original Project Plan ===
+  ->8-
+  columns hierarchindex,
+          name, start, end, effort, duration, cost,
+          revenue, chart { ${TaskTip} }
+  # For this report we like to have the abbreviated weekday in front
+  # of the date. %a is the tag for this.
+  timeformat "%a %Y-%m-%d"
+  loadunit days
   hideresource 1
+  caption 'All effort values are in man days.'
+
+  footer -8<-
+    === Staffing ===
+    
+    All project phases are properly staffed. See [[ResourceGraph]] for
+    detailed resource allocations.
+    
+    === Current Status ===
+    
+    The project started off with a delay of 4 days. This slightly affected
+    the original schedule. See [[Deliveries]] for the impact on the
+    delivery dates.
+  ->8-
+}
+
+# Macro to set the background color of a cell according to the alert
+# level of the task.
+macro AlertColor [
+  cellcolor plan.alert = 0 "#00D000" # green
+  cellcolor plan.alert = 1 "#D0D000" # yellow
+  cellcolor plan.alert = 2 "#D00000" # red
+]
+
+taskreport status "" {
+  columns wbs, name, start, end, effort, alert { tooltip plan.journal
+  != '' "<-query attribute='journal'->" }, status
+
+  taskreport dashboard "" {
+    headline "Project Dashboard (<-query attribute='now'->)"
+    columns name { title "Task" ${AlertColor} },
+            resources { width 200 ${AlertColor} 
+                        start ${projectstart} end ${projectend} },
+            alerttrend { title "Trend" ${AlertColor} },
+            journalmessages { width 260 ${AlertColor} }
+    hidetask ~hasalert(0)
+    sorttasks alert.down
+    period %{${now} - 1w} +1w
+  }
+  taskreport completed "" {
+    headline "Already completed tasks"
+  }
+  taskreport ongoing "" {
+    headline "Ongoing tasks"
+  }
+  taskreport future "" {
+    headline "Future tasks"
+  }
+}
+
+# A list of tasks showing the resources assigned to each task.
+taskreport development "" {
+  headline "Development - Resource Allocation Report"
+  columns hierarchindex, name, start, end, effort { title "Work" },
+          duration, chart { ${TaskTip} scale day width 500 }
+  timeformat "%Y-%m-%d"
+  hideresource ~(isleaf() & isleaf_())
+  sortresources name.up
+}
+
+# A list of all tasks with the percentage completed for each task
+taskreport deliveries "" {
+  headline "Project Deliverables"
+  columns hierarchindex, name, start, end, note { width 150 }, complete,
+          chart { ${TaskTip} } 
+
+  hideresource 1
+}
+# A list of all employees with their contact details.
+resourcereport contactList "" {
+  headline "Contact list and duty plan"
+  columns name,
+          email { celltext 1 "[mailto:<-email-> <-email->]" },
+          chart { scale day }
+  hideresource ~isleaf()
+  sortresources name.up
+  hidetask 1
+}
+
+# A graph showing resource allocation. It identifies whether each
+# resource is under- or over-allocated for.
+resourcereport resourceGraph "" {
+  headline "Resource Allocation Graph"
+  columns no, name, effort, rate, weekly { ${TaskTip} }
   loadunit shortauto
+  # We only like to show leaf tasks for leaf resources.
+  hidetask ~(isleaf() & isleaf_())
+  sorttasks plan.start.up
 }
 :END:
-
